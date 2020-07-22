@@ -2,7 +2,7 @@
 - Built for OTRS CE v6.0  
 - This module enable the integration from Telegram users (customer/public) to OTRS.  
 - by conversation with a bot, customer or public can get create a ticket and search a ticket submitted by him/her.  
-- STATUS: Work In Progress .(Refer end of file).
+- **STATUS: Work In Progress .(Refer end of file).**
 
 		Used CPAN Modules:
 		
@@ -49,12 +49,11 @@
 		Type: Text
 
 
-8. Enable mapping for customer user profiled to ticket dynamic field at System Configuration  
+8. Enable mapping for customer user profile to ticket dynamic field at System Configuration  
 
 		- Ticket::EventModulePost###4100-DynamicFieldFromCustomerUser  
 		- DynamicFieldFromCustomerUser::Mapping  
-	
-		* DynamicField_ICPassport => TicketICPassport  
+			- DynamicField_ICPassport => TicketICPassport  
 	
 	
 
