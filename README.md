@@ -2,7 +2,8 @@
 - Built for OTRS CE v6.0  
 - This module enable the integration from Telegram users (customer/public) to OTRS.  
 - by conversation with a bot, customer or public can get create a ticket and search a ticket submitted by him/her.  
-- **STATUS: Work In Progress .(Refer end of file).**
+
+- **STATUS: Work In Progress .(Refer Project).**
 
 		Used CPAN Modules:
 		
@@ -98,15 +99,5 @@ SIMULATION:
 
 [![2.png](https://i.postimg.cc/sgVv6hfN/2.png)](https://postimg.cc/rKPVzzr1)  
 
-[![3.png](https://i.postimg.cc/1353c1Jx/3.png)](https://postimg.cc/6ygKtSkz)  
-
-
-WORK IN PROGRES.....................UPDATING........................  
-
-		- Create ticket function
-		- Instead of direct search of ticket (DynamicField_TicketICPassport), search customer profile first based on submitted IC Number / Passport
-			- if profile found, search ticket submitted by their registered customer profile.
-				- because customer may submitted ticket via email or previous submitted ticket dont have valid IC Number / Passport on them.
-			
-			- if profile not found, only then search ticket by ticket dynamic field (DynamicField_TicketICPassport).		
+[![3.png](https://i.postimg.cc/1353c1Jx/3.png)](https://postimg.cc/6ygKtSkz)  	
 
