@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otrs_config version="2.0" init="Config">
+    <Setting Name="GenericInterface::Operation::Module###TelegramCustomer::TicketTelegramCustomer" Required="0" Valid="1">
+        <Description Translatable="1">GenericInterface module registration for the operation layer.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">TicketTelegramCustomer</Item>
+                <Item Key="Controller">TicketTelegramCustomer</Item>
+                <Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::TicketTelegramCustomer###CustomerVerification" Required="0" Valid="1">
+        <Description Translatable="1">Defines the customer user dynamic field that hold the customer profile verification (unique) value. Purpose: to search customer user based on this dynamicf field (customer) and value.</Description>
+        <Navigation>GenericInterface::Operation::TicketTelegramCustomer</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">DynamicField_ICPassport</Item>
+        </Value>
+    </Setting>
+     <Setting Name="GenericInterface::Operation::TicketTelegramCustomer###TicketVerification" Required="0" Valid="1">
+        <Description Translatable="1">Defines the ticket dynamic field that hold the ticket verification (unique) value. Purpose : to search ticket based on this dynamic field (ticket) and value.</Description>
+        <Navigation>GenericInterface::Operation::TicketTelegramCustomer</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">DynamicField_TicketICPassport</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::TicketTelegramCustomer###Token" Required="0" Valid="1">
+        <Description Translatable="1">Defines the token value that will be send by telegram outgoing webhook (for incoming TicketTelegram Generic Interface)</Description>
+        <Navigation>GenericInterface::Operation::TicketTelegramCustomer</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">TELEGRAM_BOT_TOKEN_HERE</Item>
+        </Value>
+    </Setting>
+</otrs_config>
