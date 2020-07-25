@@ -104,6 +104,7 @@ sub Run {
     
     my $GreetText = "Please insert you IC Number (Malaysian) / Passport (Foreigner):";
     my $NoCacheText = "Opps Timeout.Please re-insert you IC Number (Malaysian) / Passport (Foreigner):";
+    my $NewTicketText = "Please write your case description:";
     my $CacheType = "TelegramCustomerUser";
     
     #if using text command
@@ -112,35 +113,12 @@ sub Run {
         my $Text = $Param{Data}->{message}->{text};
         my $ReplyToText = $Param{Data}->{message}->{reply_to_message}->{text} || 0;
         
-        #check either this is replied text or new text
-        if ( $ReplyToText ne $GreetText && $ReplyToText ne $NoCacheText )
-        {
+        #set cache field for ic/pass
+        my $CacheKeyICPass  = "TelegramCUICPass-$Param{Data}->{message}->{chat}->{id}";
             
-            my @KeyboardData = ();
-                
-            #sent telegram
-            my $Sent = $Self->SentMessage(
-                ChatID =>$Param{Data}->{message}->{chat}->{id},
-                MsgID => $Param{Data}->{message}->{message_id},
-                Text => $GreetText,
-                Keyboard => \@KeyboardData, #dynamic keyboard
-                Force => \1, 
-                Selective => \1, 
-            );
-        
-            return {
-                Success => 1,
-                Data    => {
-                    text => $Sent,
-                },
-            };
-        }
-        
-        else
+        #check either this is replied text for IC/Passport input
+        if ( $ReplyToText eq $GreetText || $ReplyToText eq $NoCacheText )
         {
-            #set cache field for ic/pass
-            my $CacheKeyICPass  = "TelegramCUICPass-$Param{Data}->{message}->{chat}->{id}";
-            
             #delete cache if exist
             my $DeleteCache = $CacheObject->Delete(
                 Type => $CacheType,       # only [a-zA-Z0-9_] chars usable
@@ -166,7 +144,7 @@ sub Run {
             my $Sent = $Self->SentMessage(
                 ChatID => $Param{Data}->{message}->{chat}->{id},
                 MsgID => $Param{Data}->{message}->{message_id},
-                Text => "IC / Passport submitted ($Text). Please click Menu button below to continue",
+                Text => "<pre>IC / Passport submitted ($Text). Please click Menu button below to continue</pre>",
                 Keyboard => \@KeyboardData, #dynamic keyboard
                 Force => \0, 
                 Selective => \0, 
@@ -177,8 +155,102 @@ sub Run {
                 Data    => {
                     text => $Sent,
                 },
-            };
+            }; 
             
+        }
+        #check either this is replied text for case description input
+        elsif ( $ReplyToText eq $NewTicketText )
+        {
+            ##no need to set cache as this further into process
+
+            #check cache. if not, ask for ic/passport
+            my $ICPass = $Self->ValidateCache(
+                Type => $CacheType,
+                Key  =>  $CacheKeyICPass,
+            );
+            
+            #send telegram if cache empty
+            if ( !$ICPass)
+            {
+                my @KeyboardData = ();
+                #sent telegram
+                my $Sent = $Self->SentMessage(
+                    ChatID => $Param{Data}->{message}->{chat}->{id},
+                    MsgID => $Param{Data}->{message}->{message_id},
+                    Text => $NoCacheText,
+                    Keyboard => \@KeyboardData, #dynamic keyboard
+                    Force => \1, 
+                    Selective => \1, 
+                );
+            
+                return {
+                    Success => 1,
+                    Data    => {
+                        text => $Sent,
+                    },
+                };    
+                    
+            }
+            
+            my ($CustomerUserID, $Fullname, $CustomerID, $CustomerEmail) = $Self->ValidateTelegramCustomer(
+                Customer => $ICPass,
+            );
+            
+            #Create ticket section
+            my $NewTicketNumber = $Self->CreateTicket(
+                CustomerEmail => $CustomerEmail,
+                CustomerID   => $CustomerID,
+                CustomerUser => $CustomerUserID,
+                RegisteredName => $Fullname,
+                Body => $Text,
+            );
+            
+            my @KeyboardData = (
+                [{ 
+                    text => "Menu", 
+                    callback_data => "/menu",
+                }]
+                );
+            
+            #sent message after submit case
+            my $Sent = $Self->SentMessage(
+                ChatID => $Param{Data}->{message}->{chat}->{id},
+                MsgID => $Param{Data}->{message}->{message_id},
+                Text => "<pre>Case#$NewTicketNumber received. Thanks</pre>",
+                Keyboard => \@KeyboardData, #dynamic keyboard
+                Force => \0, 
+                Selective => \0, 
+            );
+            
+            return {
+                Success => 1,
+                Data    => {
+                    text => $Sent,
+                },
+            }; 
+            
+        }
+        #when new text instead,
+        else
+        {
+            my @KeyboardData = ();
+                
+            #sent telegram
+            my $Sent = $Self->SentMessage(
+                ChatID =>$Param{Data}->{message}->{chat}->{id},
+                MsgID => $Param{Data}->{message}->{message_id},
+                Text => $GreetText,
+                Keyboard => \@KeyboardData, #dynamic keyboard
+                Force => \1, 
+                Selective => \1, 
+            );
+        
+            return {
+                Success => 1,
+                Data    => {
+                    text => $Sent,
+                },
+            };
         }
         
         
@@ -254,7 +326,7 @@ sub Run {
             my $Sent = $Self->SentMessage(
                 ChatID => $Param{Data}->{callback_query}->{message}->{chat}->{id},
                 MsgID => $Param{Data}->{callback_query}->{message}->{message_id},
-                Text => "Available command as below for ($ICPass): \n",
+                Text => "Available command as below for ($ICPass):",
                 Keyboard => \@KeyboardData, #dynamic keyboard
                 Force => \0, 
                 Selective => \0,
@@ -307,9 +379,19 @@ sub Run {
         elsif ($Param{Data}->{callback_query}->{data} eq "/profileid")
         {
          
-            my ($Profile, $CustomerUserID) = $Self->ValidateTelegramCustomer(
+            my ($CustomerUserID, $Fullname, $CustomerID, $CustomerEmail) = $Self->ValidateTelegramCustomer(
                 Customer => $ICPass,
             );
+            
+            my $Text;
+            if ($CustomerUserID eq "N/A")
+            {
+                $Text = "<pre>Profile for keyword $ICPass not found</pre>";
+            }
+            else
+            {
+                $Text = "<pre>Found It!\nIC / Passport: $ICPass\nRegistered ID: $CustomerUserID\nRegistered Name: $Fullname</pre>";
+            }
             
             my @KeyboardData = (
             [{ 
@@ -322,7 +404,7 @@ sub Run {
             my $Sent = $Self->SentMessage(
                 ChatID => $Param{Data}->{callback_query}->{message}->{chat}->{id},
                 MsgID => $Param{Data}->{callback_query}->{message}->{message_id},
-                Text => $Profile,
+                Text => $Text,
                 Keyboard => \@KeyboardData, #dynamic keyboard
                 Force => \0, 
                 Selective => \0,
@@ -341,7 +423,7 @@ sub Run {
         {
             
             ##TODO: to search ticket based on registered customer profile or dynamic field ic/passport number
-            #my ($Profile, $CustomerUserID) = $Self->ValidateTelegramCustomer(
+            #my ($CustomerUserID, $Fullname, $CustomerID, $CustomerEmail) = $Self->ValidateTelegramCustomer(
             #    Customer => $Param{Data}->{callback_query}->{message}->{chat}->{id},
             #);
             
@@ -444,7 +526,79 @@ sub Run {
             };
         }
         
-        else
+        #new ticket
+        elsif ($Param{Data}->{callback_query}->{data} eq "/new")
+        {
+         
+            my ($CustomerUserID, $Fullname, $CustomerID, $CustomerEmail) = $Self->ValidateTelegramCustomer(
+                Customer => $ICPass,
+            );
+            
+            if ($CustomerUserID eq "N/A")
+            {
+                
+                my @KeyboardData = (
+                [{ 
+                    text => "Menu", 
+                    callback_data => "/menu",
+                }],
+                );
+            
+                #sent telegram
+                my $Sent = $Self->SentMessage(
+                    ChatID => $Param{Data}->{callback_query}->{message}->{chat}->{id},
+                    MsgID => $Param{Data}->{callback_query}->{message}->{message_id},
+                    Text => "Opss..only registered profile in OTRS allowed to submit a new ticket",
+                    Keyboard => \@KeyboardData, #dynamic keyboard
+                    Force => \0, 
+                    Selective => \0,
+                );
+        
+                return {
+                    Success => 1,
+                    Data    => {
+                        text => $Sent,
+                    },
+                };
+             
+            }
+            else
+            {
+                
+                my @KeyboardData = ();
+                
+                #sent telegram
+                my $Sent1 = $Self->SentMessage(
+                    ChatID => $Param{Data}->{callback_query}->{message}->{chat}->{id},
+                    MsgID => $Param{Data}->{callback_query}->{message}->{message_id},
+                    Text => "<pre>Registered ID: $CustomerUserID\nRegistered Name: $Fullname</pre>",
+                    Keyboard => \@KeyboardData, #dynamic keyboard
+                    Force => \0, 
+                    Selective => \0,
+                );
+                
+                #sent telegram
+                my $Sent2 = $Self->SentMessage(
+                    ChatID => $Param{Data}->{callback_query}->{message}->{chat}->{id},
+                    MsgID => $Param{Data}->{callback_query}->{message}->{message_id},
+                    Text => "$NewTicketText",
+                    Keyboard => \@KeyboardData, #dynamic keyboard
+                    Force => \1, 
+                    Selective => \1,
+                );
+        
+                return {
+                    Success => 1,
+                    Data    => {
+                        text => "$Sent1 $Sent2",
+                    },
+                };
+             
+            }
+            
+        }
+        
+        else ##another button
         {
             #sent telegram
             my $Sent = $Self->SentMessage(

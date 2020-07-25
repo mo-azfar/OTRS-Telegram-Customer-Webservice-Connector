@@ -83,11 +83,15 @@ sub ValidateTelegramCustomer {
 	
     my $CustomerUserID;
     my $Fullname;
+    my $CustomerID;
+    my $CustomerEmail;
     
     if (!@{$CustomerUserIDsRef})
     {
         $CustomerUserID="N/A";
         $Fullname="N/A";
+        $CustomerID="N/A";
+        $CustomerEmail="N/A";
     }
     else
     {
@@ -96,11 +100,12 @@ sub ValidateTelegramCustomer {
             User => $CustomerUserID,
         );
         $Fullname = "$CustomerUser{UserFullname}";
+        $CustomerID = "$CustomerUser{UserCustomerID}";
+        $CustomerEmail = "$CustomerUser{UserEmail}";
         
     }
 	
-    my $Profile = "<pre>IC / Passport: $Param{Customer}\nRegistered ID: $CustomerUserID\nRegistered Name: $Fullname</pre>";
-    return ($Profile, $CustomerUserID);
+    return ($CustomerUserID, $Fullname, $CustomerID, $CustomerEmail);
     
 } 
 
@@ -217,6 +222,73 @@ sub GetTicket {
 - Status: $Ticket{DynamicField_Status}</pre>";
 
     return $GetText;
+    
+} 
+
+sub CreateTicket {
+    my ( $Self, %Param ) = @_;
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldValueObject = $Kernel::OM->Get('Kernel::System::DynamicFieldValue');
+    my $ArticleBackendObject = $Kernel::OM->Get('Kernel::System::Ticket::Article')->BackendForChannel(ChannelName => 'Email');
+
+    # check needed stuff
+    return if !$Param{CustomerID};
+    return if !$Param{CustomerUser};
+    return if !$Param{RegisteredName};
+    return if !$Param{Body};
+    return if !$Param{CustomerEmail};
+
+    my $TicketID = $TicketObject->TicketCreate(
+        Title        => "New Case from Telegram - $Param{RegisteredName}",
+        Queue        => "Helpdesk",     
+        Lock         => "unlock",
+        Priority     => "3 normal",      
+        State        => "new",            
+        CustomerID   => $Param{CustomerID},
+        CustomerUser => $Param{CustomerUser},
+        OwnerID      => 1,
+        UserID       => 1,
+    );
+    
+    my $ArticleID = $ArticleBackendObject->ArticleCreate(
+        TicketID             => $TicketID,                          # (required)
+        SenderType           => 'customer',                         # (required) agent|system|customer
+        IsVisibleForCustomer => 1,                                  # (required) Is article visible for customer?
+        UserID               => 1,                                  # (required)
+        From           => $Param{RegisteredName},                 # not required but useful
+        To             => 'Helpdesk',                               # not required but useful
+        Subject        => "New Case from Telegram - $Param{RegisteredName}",               # not required but useful
+        Body           =>  $Param{Body},                            # not required but useful
+        ContentType    => 'text/html; charset=utf8',                # or optional Charset & MimeType
+        HistoryType    => 'NewTicket',                            # EmailCustomer|Move|AddNote|PriorityUpdate|WebRequestCustomer|...
+        HistoryComment => 'New ticket from telegram',
+        NoAgentNotify    => 0,                                      # if you don't want to send agent notifications
+    
+    );
+    
+    my $DynamicField1 = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'Channel',
+    );
+    
+    my $Success1 = $DynamicFieldValueObject->ValueSet(
+        FieldID  => $DynamicField1->{ID},                 # ID of the dynamic field
+        ObjectID => $TicketID,                # ID of the current object that the field
+                                              #   must be linked to, e. g. TicketID
+        Value    => [
+            {
+                ValueText          => 'Telegram Customer', 
+            },
+        ],
+        UserID   =>1,
+    );
+    
+    my $TicketNumber = $TicketObject->TicketNumberLookup(
+        TicketID => $TicketID,
+    );
+    
+    return $TicketNumber;
     
 } 
 
