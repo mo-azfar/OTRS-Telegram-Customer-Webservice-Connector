@@ -101,7 +101,7 @@ SIMULATION:
 
 [![3.png](https://i.postimg.cc/1353c1Jx/3.png)](https://postimg.cc/6ygKtSkz)  
 
-[![new1.png](https://i.postimg.cc/PJQb17dn/new1.png)](https://postimg.cc/H8j7gBJ6)  
+[![3.jpg](https://i.postimg.cc/zBjSgMzZ/3.jpg)](https://postimg.cc/DJSXVx4B)  
 
 	
 
