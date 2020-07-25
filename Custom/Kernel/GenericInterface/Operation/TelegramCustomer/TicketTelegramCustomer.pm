@@ -386,7 +386,7 @@ sub Run {
             my $Text;
             if ($CustomerUserID eq "N/A")
             {
-                $Text = "<pre>Profile for keyword $ICPass not found</pre>";
+                $Text = "<pre>Profile for keyword $ICPass not found or not valid</pre>";
             }
             else
             {
@@ -548,7 +548,7 @@ sub Run {
                 my $Sent = $Self->SentMessage(
                     ChatID => $Param{Data}->{callback_query}->{message}->{chat}->{id},
                     MsgID => $Param{Data}->{callback_query}->{message}->{message_id},
-                    Text => "Opss..only registered profile in OTRS allowed to submit a new ticket",
+                    Text => "Opss..only registered and valid profile in OTRS allowed to submit a new ticket",
                     Keyboard => \@KeyboardData, #dynamic keyboard
                     Force => \0, 
                     Selective => \0,

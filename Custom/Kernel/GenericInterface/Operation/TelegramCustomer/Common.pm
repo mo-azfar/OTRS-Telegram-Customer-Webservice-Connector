@@ -99,10 +99,20 @@ sub ValidateTelegramCustomer {
         my %CustomerUser = $CustomerUserObject->CustomerUserDataGet(
             User => $CustomerUserID,
         );
-        $Fullname = "$CustomerUser{UserFullname}";
-        $CustomerID = "$CustomerUser{UserCustomerID}";
-        $CustomerEmail = "$CustomerUser{UserEmail}";
         
+        if ($CustomerUser{ValidID} ne 1)
+        {
+            $CustomerUserID="N/A";
+            $Fullname="N/A";
+            $CustomerID="N/A";
+            $CustomerEmail="N/A";
+        }
+        else
+        {
+            $Fullname = "$CustomerUser{UserFullname}";
+            $CustomerID = "$CustomerUser{UserCustomerID}";
+            $CustomerEmail = "$CustomerUser{UserEmail}";
+        }
     }
 	
     return ($CustomerUserID, $Fullname, $CustomerID, $CustomerEmail);
