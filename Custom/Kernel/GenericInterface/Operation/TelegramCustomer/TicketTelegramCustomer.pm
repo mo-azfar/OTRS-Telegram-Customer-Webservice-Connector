@@ -2,8 +2,6 @@
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
-
-##TODO: when create ticket, map ic/name/email address to ticket dynamic field
  
 package Kernel::GenericInterface::Operation::TelegramCustomer::TicketTelegramCustomer;
 
@@ -422,11 +420,6 @@ sub Run {
         elsif ($Param{Data}->{callback_query}->{data} eq "/mine/wip" || $Param{Data}->{callback_query}->{data} eq "/mine/closed" || $Param{Data}->{callback_query}->{data} eq "/mine/all")
         {
             
-            ##TODO: to search ticket based on registered customer profile or dynamic field ic/passport number
-            #my ($CustomerUserID, $Fullname, $CustomerID, $CustomerEmail) = $Self->ValidateTelegramCustomer(
-            #    Customer => $Param{Data}->{callback_query}->{message}->{chat}->{id},
-            #);
-            
             #delete cache if exist (for mine selected button)
             $CacheObject->Delete(
                 Type => $CacheType,       # only [a-zA-Z0-9_] chars usable
@@ -455,10 +448,28 @@ sub Run {
                 @PossibleStateType = ('new', 'open', 'pending reminder', 'pending auto', 'closed'); 
             }
             
+                        
+            my ($CustomerUserID, $Fullname, $CustomerID, $CustomerEmail) = $Self->ValidateTelegramCustomer(
+                Customer => $Param{Data}->{callback_query}->{message}->{chat}->{id},
+            );
+            
+            my $FilterBy;
+            if ($CustomerUserID eq "N/A")
+            {
+                $FilterBy = "Ticket";
+            }
+            else
+            {
+                $FilterBy = "CustomerUser";
+            }
+            
+            
             #check my ticket depending on state type
             my ($CheckMyTicket, @KeyboardTicketData) = $Self->CheckMyTicket(
                 SearchValue => $ICPass,
                 Condition => \@PossibleStateType,
+                FilterBy => $FilterBy,
+                Customer => $CustomerUserID,
             );
             
             #sent telegram

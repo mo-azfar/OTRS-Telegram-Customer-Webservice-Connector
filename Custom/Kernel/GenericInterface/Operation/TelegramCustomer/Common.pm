@@ -129,17 +129,35 @@ sub CheckMyTicket {
     # check needed stuff
     return if !$Param{SearchValue};
     return if !$Param{Condition};
+    return if !$Param{FilterBy};
+    return if !$Param{Customer};
     
-    my @TicketIDs = $TicketObject->TicketSearch(
-        Result => 'ARRAY',
-        StateType    => \@{$Param{Condition}},
-        $TicketVerificationField => {
-            Empty             => 0,                       # will return dynamic fields without a value
-                                                          # set to 0 to search fields with a value present
-            Equals            => $Param{SearchValue},
-        },
-        UserID => 1,
-    );
+    my @TicketIDs = ();
+    if ($Param{FilterBy} eq "Ticket")
+    {
+    
+        @TicketIDs = $TicketObject->TicketSearch(
+            Result => 'ARRAY',
+            StateType    => \@{$Param{Condition}},
+            $TicketVerificationField => {
+                Empty             => 0,                       # will return dynamic fields without a value
+                                                            # set to 0 to search fields with a value present
+                Equals            => $Param{SearchValue},
+            },
+            UserID => 1,
+        );
+    }
+    
+    elsif ($Param{FilterBy} eq "Customer")
+    {
+    
+        @TicketIDs = $TicketObject->TicketSearch(
+            Result => 'ARRAY',
+            StateType    => \@{$Param{Condition}},
+            CustomerUserLogin => $Param{Customer},
+            UserID => 1,
+        );
+    }
     
     my $TicketText;
     #use for telegram dynamic keyboard
